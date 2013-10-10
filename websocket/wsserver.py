@@ -1,5 +1,4 @@
-import socket
-import thread
+import socket, threading
 
 from websocket import config, wsclient
 
@@ -10,27 +9,33 @@ class Server:
     """
     def __init__(self):
         self.clients = []
+        self.threads = []
 
     def run(self):
         """
         Starts the server
         """
-        s = socket.socket()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('', config.socket_port))
-        s.listen(1)
+        s.bind((config.socket_host, config.socket_port))
+        s.listen(5)
 
         try:
-            while 1:
+            while True:
                 conn, addr = s.accept()
-                print('New client connected', addr)
 
                 newClient = wsclient.Client(conn, addr, self)
-                thread.start_new_thread(newClient.run())
 
+                t = threading.Thread(target=newClient.run)
+                t.start()
+
+                self.threads.append(t)
                 self.clients.append(newClient)
+
+                print('New client connected', addr)
         except KeyboardInterrupt:
             [client.close() for client in self.clients]
+            [thread._Thread__stop() for thread in self.threads]
             s.close()
 
     def remove(self, client):
@@ -39,8 +44,10 @@ class Server:
         """
         self.clients.remove(client)
 
-    def send_to_all(self, data):
+    def send_to_all(self, from_addr, data):
         """
         Sends a message to all clients
         """
-        [client.send(data) for client in self.clients]
+        for client in self.clients:
+            if client.addr == from_addr: continue
+            client.send(data)

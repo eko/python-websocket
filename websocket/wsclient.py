@@ -1,9 +1,9 @@
-import hashlib, base64
+import hashlib, base64, sys
 
 from websocket import config
 
 
-class Client():
+class Client:
     """
     A single connection (client) of the program
     """
@@ -35,13 +35,15 @@ class Client():
         )
         self.s.send(handshake.encode())
 
-        while 1:
+        while True:
             data = self.s.recv(1024)
 
             if not data: continue
 
             print('Data from', self.addr, ':', data)
             self.onreceive(data)
+
+        self.close()
 
     def parse_headers(self, data):
         """
@@ -63,28 +65,17 @@ class Client():
         """
         print('Client left: ', self.addr)
 
-        self.server.remove(self)
+        self.server.clients.remove(self)
         self.s.close()
 
     def send(self, msg):
         """
         Sends a message to the current client
         """
-        msg = b'\x00' + msg + b'\xff'
         self.s.send(msg)
 
     def onreceive(self, data):
         """
         Sends message to all client (server is calling send() method for each connected client)
         """
-        data = self._clean(data)
-        self.server.send_to_all(data)
-
-    def _clean(self, msg):
-        """
-        Remove special chars used for the transmission
-        """
-        msg = msg.replace(b'\x00', b'', 1)
-        msg = msg.replace(b'\xff', b'', 1)
-
-        return msg
+        self.server.send_to_all(self.addr, data)
