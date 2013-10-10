@@ -1,4 +1,4 @@
-import hashlib, base64, sys
+import hashlib, base64
 
 from websocket import config
 
