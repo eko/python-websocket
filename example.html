@@ -1,0 +1,28 @@
+<!DOCTYPE HTML>
+<html>
+    <body>
+       <a href="javascript:connect();">Connect to server</a>
+       <a href="javascript:sayHello();">Say hello</a>
+
+       <div id="logs"></div>
+
+        <script type="text/javascript">
+            var ws = null;
+            var logs = document.getElementById('logs');
+
+            function connect() {
+                 ws = new WebSocket('ws://localhost:9998/hello');
+
+                 ws.onmessage = function (evt) {
+                    logs.innerHTML += '<br /><strong>Message received</strong>: ' + evt.data;
+                 };
+
+                 logs.innerHTML += '<br />Connected!';
+            }
+
+            function sayHello() {
+                ws.send('Hello!');
+            }
+    </script>
+    </body>
+</html>
